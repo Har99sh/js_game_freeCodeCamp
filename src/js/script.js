@@ -16,7 +16,7 @@ window.addEventListener("load", () => {
             this.game = options.game;
             this.collision_x = this.game.width / 2; // position of the collision box
             this.collision_y = this.game.height / 2; // position of the collision box
-            this.collision_radius = 30;
+            this.collision_radius = 40;
 
             this.speed_x = 0;
             this.speed_y = 0;
@@ -24,7 +24,20 @@ window.addEventListener("load", () => {
             this.distance_x = 0;
             this.distance_y = 0;
 
-            this.speed_modifier = 5;
+            this.speed_modifier = 7;
+
+            this.image = document.querySelector("#bull");
+            this.sprite_width = 255; // different obstacle in the image used
+            this.sprite_height = 256;
+            
+            this.width = this.sprite_width;
+            this.height = this.sprite_height;
+
+            // adjust position according to collison radius 
+            this.sprite_x, this.sprite_y;
+            // get random obstacle
+            this.frame_x = Math.floor(Math.random() * 4);
+            this.frame_y = Math.floor(Math.random() * 3);
         }
 
         /**
@@ -32,24 +45,32 @@ window.addEventListener("load", () => {
          * @param {*} context for drawing on the canvas
          */
         draw(context) {
-            context.beginPath(); // to start circle drawing
-            context.arc(this.collision_x, this.collision_y, this.collision_radius, 0, Math.PI * 2);
-            context.save()
-            context.fill();
-            context.globalAlpha = 0.5;
-            context.restore();
-            context.stroke();
+            this.drawImage(context)
+            if (this.game.debug) {
 
-            // Draw a line towards where the player will move
-            context.beginPath();
-            context.moveTo(this.collision_x, this.collision_y);
-            context.lineTo(this.game.mouse.x, this.game.mouse.y);
-            context.stroke();
+                context.beginPath(); // to start circle drawing
+                context.arc(this.collision_x, this.collision_y, this.collision_radius, 0, Math.PI * 2);
+                context.save()
+                context.fill();
+                context.globalAlpha = 0.5;
+                context.restore();
+                context.stroke();
+                
+                // Draw a line towards where the player will move
+                context.beginPath();
+                context.moveTo(this.collision_x, this.collision_y);
+                context.lineTo(this.game.mouse.x, this.game.mouse.y);
+                context.stroke();
+            }
         }
 
         update() {
+            // find the angel according where the mouse is 
+            
             this.distance_x = this.game.mouse.x - this.collision_x;
             this.distance_y = this.game.mouse.y - this.collision_y;
+            const angle = Math.atan2(this.distance_y, this.distance_x);
+            this.calcAngle(angle);
             const distance = Math.hypot(this.distance_y, this.distance_x)
             if (distance > this.speed_modifier) {
                 this.speed_x = this.distance_x / distance || 0;
@@ -60,7 +81,20 @@ window.addEventListener("load", () => {
             }
             this.collision_x += this.speed_x * this.speed_modifier;
             this.collision_y += this.speed_y * this.speed_modifier;
+            this.sprite_x = this.collision_x - this.width / 2;
+            this.sprite_y = this.collision_y - this.height / 2 - 100;
 
+            // Horizontal boundries
+            if (this.collision_x < this.collision_radius) 
+                this.collision_x = this.collision_radius;
+            else if (this.collision_x > this.game.width - this.collision_radius) 
+                this.collision_x = this.game.width - this.collision_radius;
+    
+            // vertical boundries
+            if (this.collision_y < this.game.top_margin + this.collision_radius)
+                this.collision_y = this.game.top_margin + this.collision_radius;
+            else if (this.collision_y > this.game.height + this.collision_radius)
+                this.collision_y = this.game.height - this.collision_radius;
             this.game.obstacles.forEach(obstacle => {
                 // distructuring assinment
                 let [collision, distance, distance_x, distance_y, sum_of_radii] = this.game.checkCollision(this, obstacle);
@@ -74,13 +108,30 @@ window.addEventListener("load", () => {
                 }
             });
         }
+
+        drawImage(context) {
+            context.drawImage(this.image, this.frame_x * this.sprite_width, this.frame_y * this.sprite_height, 
+                                this.sprite_width, this.sprite_height, this.sprite_x, this.sprite_y, this.width, this.height);
+        }
+
+        calcAngle(angle) {
+            if (angle < -2.74 || angle > 2.74) this.frame_y = 6;
+            else if (angle < -1.96) this.frame_y = 7;
+            else if (angle < -1.17) this.frame_y = 0;
+            else if (angle < -0.39) this.frame_y = 1;
+            else if (angle < 0.39) this.frame_y = 2;
+            else if (angle < 1.17) this.frame_y = 3;
+            else if (angle < 1.96) this.frame_y = 4;
+            else if (angle < 2.74) this.frame_y = 5;
+
+        }
     }
     class Obstacle {
         constructor(options) {
             this.game = options.game;
             this.collision_x = Math.random() * this.game.width; // position of the collision box
             this.collision_y = Math.random() * this.game.height; // position of the collision box
-            this.collision_radius =  50;
+            this.collision_radius =  60;
             this.image = document.querySelector("#obstacle");
             
             this.sprite_width = 250; // different obstacle in the image used
@@ -97,15 +148,18 @@ window.addEventListener("load", () => {
         }
         draw(context) {
             this.drawImage(context)
-            context.beginPath(); // to start circle drawing
-            context.arc(this.collision_x, this.collision_y, this.collision_radius, 0, Math.PI * 2);
-            context.save()
-            context.fillStyle = "#E5E7E7";
-            context.strokeStyle = "#FFFFFF";
-            context.globalAlpha = 0.5;
-            context.fill();
-            context.stroke();
-            context.restore();
+            if (this.game.debug) {
+
+                context.beginPath(); // to start circle drawing
+                context.arc(this.collision_x, this.collision_y, this.collision_radius, 0, Math.PI * 2);
+                context.save()
+                context.fillStyle = "#E5E7E7";
+                context.strokeStyle = "#FFFFFF";
+                context.globalAlpha = 0.5;
+                context.fill();
+                context.stroke();
+                context.restore();
+            }
         }
         drawImage(context) {
             // 9 arguments: the image, source_x, source_y, source_width, source_height, position_x
@@ -125,7 +179,10 @@ window.addEventListener("load", () => {
             this.player = new Player({game: this});
             this.number_of_obstacles = 10;
             this.obstacles = [];
-
+            this.debug = false;
+            this.fps = 50;
+            this.timer = 0;
+            this.interval = 1000/this.fps;
             this.mouse = {
                 x: this.width / 2,
                 y: this.height / 2,
@@ -149,11 +206,21 @@ window.addEventListener("load", () => {
                     this.mouse.y = e.offsetY;
                 }
             });
+
+            window.addEventListener("keydown", e => {
+                if (e.key == "d") this.debug = !this.debug;
+            })
         }
-        render(context) {
-            this.obstacles.forEach(obstacle => obstacle.draw(context));
-            this.player.draw(context);
-            this.player.update();
+        render(context, delta_time) {
+            if (this.timer > this.interval) {
+                context.clearRect(0, 0, this.width, this.height);
+                this.obstacles.forEach(obstacle => obstacle.draw(context));
+                this.player.draw(context);
+                this.player.update();
+                this.timer = 0;
+            }
+            this.timer += delta_time;
+
         }
 
         createObstacles() {
@@ -204,12 +271,14 @@ window.addEventListener("load", () => {
 
     const game = new Game({canvas: canvas});
     game.createObstacles();
-    console.log(game);
+    
+    let last_time = 0;
 
-    function animate() {
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        game.render(context);
+    function animate(time_stamp) {
+        const delta_time = time_stamp - last_time; // timestamp diffrence between this animation loop and the last one
+        last_time = time_stamp;
+        game.render(context, delta_time);
         requestAnimationFrame(animate)
     }
-    animate();
+    animate(0);
 })
