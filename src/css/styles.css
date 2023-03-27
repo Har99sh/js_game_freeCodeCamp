@@ -19,6 +19,6 @@
     pointer-events: none;
 }
 
-.obstacles-img, .bull-img , .egg-img, .toad-img {
+.obstacles-img, .bull-img , .egg-img, .toad-img , .larva-img{
     display: none;
 }
